@@ -1,7 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SYSTEM_PROMPT } from './prompt.js';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Cliente criado de forma lazy para garantir que lê ANTHROPIC_API_KEY
+// no momento da chamada, não na inicialização do módulo.
+function getClient() {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error('ANTHROPIC_API_KEY não configurada no ambiente');
+  return new Anthropic({ apiKey: key });
+}
 
 /**
  * Processa uma mensagem do paciente e retorna a resposta do agente.
@@ -22,7 +28,7 @@ export async function processMessage(userMessage, session, systemPromptOverride 
 
   const finalPrompt = (systemPromptOverride || SYSTEM_PROMPT) + stateContext;
 
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: finalPrompt,

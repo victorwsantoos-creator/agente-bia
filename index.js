@@ -108,6 +108,16 @@ app.post('/api/reply', panelAuth, async (req, res) => {
   }
 });
 
+// ── API: resetar sessão (devolve conversa para a Bia) ─────────────────────────
+app.post('/api/reset', panelAuth, (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'phone obrigatório' });
+  setSession(phone, createEmptySession());
+  broadcastEvent({ type: 'session_reset', phone });
+  console.log(`🔄 Sessão resetada para ${phone}`);
+  res.json({ success: true });
+});
+
 // ── API: assumir atendimento (marca sessão sem enviar mensagem) ───────────────
 app.post('/api/assume', panelAuth, (req, res) => {
   const { phone } = req.body;
@@ -227,19 +237,23 @@ app.post('/webhook', async (req, res) => {
       setSession(phone, session);
       trackEscalation({ phone });
       await notifyEscalation({ phone, reason: result.reason_escalate, state: session.state });
-      await sendWithTyping(phone, result.message, 1500);
+      await sendWithTyping(phone, result.message, 1500).catch(e =>
+        console.error('⚠️  Falha ao enviar (escalate):', e.message)
+      );
       return res.json({ status: 'escalado' });
     }
 
     if (result.qualified && !session.leadCreated) {
       session.leadCreated = true;
       trackLeadQualified({ phone });
-      await createLead({ phone, state: session.state });
+      await createLead({ phone, state: session.state }).catch(() => {});
     }
 
     setSession(phone, session);
     const delay = Math.min(600 + result.message.length * 18, 3500);
-    await sendWithTyping(phone, result.message, delay);
+    await sendWithTyping(phone, result.message, delay).catch(e =>
+      console.error('⚠️  Falha ao enviar mensagem para', phone, ':', e.message)
+    );
     return res.json({ status: 'ok', qualified: result.qualified });
 
   } catch (err) {

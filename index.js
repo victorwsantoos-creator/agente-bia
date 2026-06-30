@@ -13,6 +13,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
 
+// ── CORS — permite chamadas do painel Netlify ─────────────────────────────────
+app.use((req, res, next) => {
+  const allowed = ['https://inovaodonto.netlify.app'];
+  const origin = req.headers.origin;
+  if (allowed.includes(origin)) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-panel-token');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 const PORT = process.env.PORT || 3000;
 const PANEL_TOKEN = process.env.PANEL_TOKEN || 'inova2026';
 

@@ -39,11 +39,24 @@ export async function processMessage(userMessage, session, systemPromptOverride 
 
   let parsed;
   try {
-    const clean = rawText.replace(/```json\n?|\n?```/g, '').trim();
-    parsed = JSON.parse(clean);
+    // 1. Tenta extrair JSON de bloco ```json ... ```
+    const blockMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
+    if (blockMatch) {
+      parsed = JSON.parse(blockMatch[1].trim());
+    } else {
+      // 2. Tenta encontrar objeto JSON solto no texto
+      const objMatch = rawText.match(/\{[\s\S]*\}/);
+      if (objMatch) {
+        parsed = JSON.parse(objMatch[0]);
+      } else {
+        // 3. Tenta parsear o texto inteiro
+        parsed = JSON.parse(rawText.trim());
+      }
+    }
   } catch {
+    // 4. Fallback: usa o texto puro como mensagem
     parsed = {
-      message: rawText,
+      message: rawText.replace(/```json[\s\S]*?```/g, '').trim(),
       state: session.state,
       qualified: false,
       escalate: false,

@@ -1,5 +1,4 @@
-import fetch from 'node-fetch';
-
+// Usa o fetch global do Node.js 18+ (sem node-fetch)
 const BASE_URL  = () => process.env.EVOLUTION_URL     || '';
 const INSTANCE  = () => process.env.EVOLUTION_INSTANCE || 'clinica-odonto';
 const API_KEY   = () => process.env.EVOLUTION_API_KEY  || '';

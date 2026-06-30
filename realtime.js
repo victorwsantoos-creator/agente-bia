@@ -9,7 +9,6 @@ export function initWebSocket(server) {
   wss = new WebSocketServer({ server, path: '/ws' });
 
   wss.on('connection', (ws, req) => {
-    // Autenticação simples por token na query string
     const url = new URL(req.url, 'http://localhost');
     const token = url.searchParams.get('token');
 
@@ -20,7 +19,6 @@ export function initWebSocket(server) {
 
     console.log('📊 Painel conectado');
 
-    // Envia estado atual ao conectar
     ws.send(JSON.stringify({
       type: 'init',
       conversations: getAllConversations(),
@@ -46,7 +44,12 @@ function broadcast(event) {
   });
 }
 
-// ── API pública usada pelo webhook e chat-api ──────────────────────────────────
+// Exporta broadcast para uso externo (toggle Bia, update prompt, etc.)
+export function broadcastEvent(event) {
+  broadcast(event);
+}
+
+// ── API pública usada pelo webhook ────────────────────────────────────────────
 
 export function trackMessage({ phone, role, text, state, qualified, escalated }) {
   if (!conversations.has(phone)) {
